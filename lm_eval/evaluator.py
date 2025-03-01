@@ -74,6 +74,7 @@ def simple_evaluate(
     numpy_random_seed: int = 1234,
     torch_random_seed: int = 1234,
     fewshot_random_seed: int = 1234,
+    human_readable_name: str = ""
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -293,6 +294,7 @@ def simple_evaluate(
         evaluation_tracker.general_config_tracker.log_experiment_args(
             model_source=model,
             model_args=model_args,
+            human_readable_name=human_readable_name,
             system_instruction=system_instruction,
             chat_template=lm.chat_template(apply_chat_template)
             if apply_chat_template
@@ -312,7 +314,7 @@ def simple_evaluate(
         system_instruction=system_instruction,
         apply_chat_template=apply_chat_template,
         fewshot_as_multiturn=fewshot_as_multiturn,
-        verbosity=verbosity,
+        verbosity=verbosity
     )
 
     if lm.rank == 0:

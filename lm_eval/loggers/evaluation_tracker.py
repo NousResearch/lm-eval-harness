@@ -48,6 +48,7 @@ class GeneralConfigTracker:
     model_source: str = None
     model_name: str = None
     model_name_sanitized: str = None
+    human_readable_name: str = None
     system_instruction: str = None
     system_instruction_sha: str = None
     fewshot_as_multiturn: bool = None
@@ -79,6 +80,7 @@ class GeneralConfigTracker:
 
     def log_experiment_args(
         self,
+        human_readable_name: str,
         model_source: str,
         model_args: str,
         system_instruction: str,
@@ -96,6 +98,7 @@ class GeneralConfigTracker:
         self.chat_template = chat_template
         self.chat_template_sha = hash_string(chat_template) if chat_template else None
         self.fewshot_as_multiturn = fewshot_as_multiturn
+        self.human_readable_name = human_readable_name
 
     def log_end_time(self) -> None:
         """Logs the end time of the evaluation and calculates the total evaluation time."""
@@ -226,7 +229,7 @@ class EvaluationTracker:
                 )
 
                 path = Path(self.output_path if self.output_path else Path.cwd())
-                path = path.joinpath(self.general_config_tracker.model_name_sanitized)
+                path = path.joinpath(self.general_config_tracker.human_readable_name)
                 path.mkdir(parents=True, exist_ok=True)
 
                 self.date_id = datetime.now().isoformat().replace(":", "-")
@@ -287,7 +290,7 @@ class EvaluationTracker:
                 eval_logger.info(f"Saving per-sample results for: {task_name}")
 
                 path = Path(self.output_path if self.output_path else Path.cwd())
-                path = path.joinpath(self.general_config_tracker.model_name_sanitized)
+                path = path.joinpath(self.general_config_tracker.human_readable_name)
                 path.mkdir(parents=True, exist_ok=True)
 
                 file_results_samples = path.joinpath(
