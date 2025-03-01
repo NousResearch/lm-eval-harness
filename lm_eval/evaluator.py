@@ -77,6 +77,7 @@ def simple_evaluate(
     fewshot_random_seed: int = 1234,
     confirm_run_unsafe_code: bool = False,
     mcq_to_generative: bool = False,
+    human_readable_name: str = ""
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -299,6 +300,7 @@ def simple_evaluate(
         evaluation_tracker.general_config_tracker.log_experiment_args(
             model_source=model,
             model_args=model_args,
+            human_readable_name=human_readable_name,
             system_instruction=system_instruction,
             chat_template=lm.chat_template(apply_chat_template)
             if apply_chat_template

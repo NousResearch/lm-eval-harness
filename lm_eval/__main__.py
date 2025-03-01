@@ -76,6 +76,13 @@ def setup_parser() -> argparse.ArgumentParser:
         help="Comma-separated list of task names or task groupings to evaluate on.\nTo get full list of tasks, use one of the commands `lm-eval --tasks {{list_groups,list_subtasks,list_tags,list}}` to list out all available names for task groupings; only (sub)tasks; tags; or all of the above",
     )
     parser.add_argument(
+        "--human_readable_name",
+        "-n",
+        default=None,
+        type=str,
+        help="The human readable name you want to save results to.",
+    )
+    parser.add_argument(
         "--model_args",
         "-a",
         default="",
@@ -399,6 +406,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         model=args.model,
         model_args=args.model_args,
         tasks=task_names,
+        human_readable_name=args.human_readable_name,
         num_fewshot=args.num_fewshot,
         batch_size=args.batch_size,
         max_batch_size=args.max_batch_size,
