@@ -318,7 +318,6 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
     if args.include_path is not None:
         eval_logger.info(f"Including path: {args.include_path}")
     task_manager = TaskManager(
-        args.verbosity,
         include_path=args.include_path,
         mcq_to_generative=args.mcq_to_generative,
     )
