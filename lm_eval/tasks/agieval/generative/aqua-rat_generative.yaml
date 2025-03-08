@@ -1,0 +1,13 @@
+task: agieval_aqua-rat_generative
+dataset_path: hails/agieval-aqua-rat
+dataset_name: null
+include: "_default_template_yaml"
+training_split: null
+validation_split: null
+test_split: test
+doc_to_text: "{{query}}\n{{choices}}\nAnswer:"
+doc_to_target: "{{gold}}"
+doc_to_choice: "{{choices}}"
+metadata:
+  version: 1.0
+group: agieval_en_generative
