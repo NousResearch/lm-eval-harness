@@ -1,22 +1,15 @@
-group:
-  - agieval_generative
-  - agieval_en_generative
-  
-agieval_en_generative:
-  - agieval_aqua-rat_generative
-  - agieval_logiqa-en_generative
-  - agieval_lsat-ar_generative
-  - agieval_lsat-lr_generative
-  - agieval_lsat-rc_generative
-  - agieval_sat-en-without-passage_generative
-  - agieval_sat-en_generative
-  - agieval_sat-math_generative
-  
-agieval_generative:
-  - agieval_en_generative
-
-agieval_generative_aggregate_metrics:
-  - metric: exact_match
-    aggregation: mean
-    higher_is_better: true
+group: agieval_generative
+group_alias: agieval (generative)
+task:
+  - group: english
+    task:
+      - agieval_en_generative
+    aggregate_metric_list:
+      - metric: exact_match
+        weight_by_size: true
+aggregate_metric_list:
+  - aggregation: mean
+    metric: exact_match
     weight_by_size: true
+metadata:
+  version: 1.0
