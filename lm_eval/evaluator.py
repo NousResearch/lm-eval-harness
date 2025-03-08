@@ -76,6 +76,7 @@ def simple_evaluate(
     torch_random_seed: int = 1234,
     fewshot_random_seed: int = 1234,
     confirm_run_unsafe_code: bool = False,
+    mcq_to_generative: bool = False,
     human_readable_name: str = ""
 ):
     """Instantiate and evaluate a model on a list of tasks.
@@ -236,7 +237,7 @@ def simple_evaluate(
         )
 
     if task_manager is None:
-        task_manager = TaskManager()
+        task_manager = TaskManager(verbosity, mcq_to_generative=mcq_to_generative)
 
     task_dict = get_task_dict(tasks, task_manager)
 
