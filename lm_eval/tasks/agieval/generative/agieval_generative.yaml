@@ -1,0 +1,3 @@
+include: "_agieval.yaml"
+
+task: agieval_generative

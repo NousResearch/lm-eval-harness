@@ -1,0 +1,3 @@
+task: agieval_sat-en_generative
+include: "aqua-rat_generative.yaml"
+dataset_path: hails/agieval-sat-en
