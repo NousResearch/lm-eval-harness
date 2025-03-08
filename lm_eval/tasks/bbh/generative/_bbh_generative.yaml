@@ -1,0 +1,37 @@
+group: bbh_generative
+group_alias: BBH (Generative)
+task:
+  - bbh_generative_boolean_expressions
+  - bbh_generative_causal_judgement
+  - bbh_generative_date_understanding
+  - bbh_generative_disambiguation_qa
+  - bbh_generative_dyck_languages
+  - bbh_generative_formal_fallacies
+  - bbh_generative_geometric_shapes
+  - bbh_generative_hyperbaton
+  - bbh_generative_logical_deduction_five_objects
+  - bbh_generative_logical_deduction_seven_objects
+  - bbh_generative_logical_deduction_three_objects
+  - bbh_generative_movie_recommendation
+  - bbh_generative_multistep_arithmetic_two
+  - bbh_generative_navigate
+  - bbh_generative_object_counting
+  - bbh_generative_penguins_in_a_table
+  - bbh_generative_reasoning_about_colored_objects
+  - bbh_generative_ruin_names
+  - bbh_generative_salient_translation_error_detection
+  - bbh_generative_snarks
+  - bbh_generative_sports_understanding
+  - bbh_generative_temporal_sequences
+  - bbh_generative_tracking_shuffled_objects_five_objects
+  - bbh_generative_tracking_shuffled_objects_seven_objects
+  - bbh_generative_tracking_shuffled_objects_three_objects
+  - bbh_generative_web_of_lies
+  - bbh_generative_word_sorting
+aggregate_metric_list:
+  - metric: exact_match
+    aggregation: mean
+    weight_by_size: true
+    filter_list: flexible-extract
+metadata:
+  version: 3.0

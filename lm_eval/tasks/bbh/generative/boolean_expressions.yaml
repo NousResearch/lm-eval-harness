@@ -1,0 +1,5 @@
+"dataset_name": "boolean_expressions"
+"description": "Evaluate the result of a random Boolean expression. This is a generative version where the model is expected to output answers in a \\boxed{} format."
+"doc_to_text": "Q: {{input}}\nA: Let's think step by step."
+"include": "_default_template_yaml"
+"task": "bbh_generative_boolean_expressions"

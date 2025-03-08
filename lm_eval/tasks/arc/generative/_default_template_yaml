@@ -1,0 +1,12 @@
+include: ../../templates/generative_template.yaml
+dataset_path: allenai/ai2_arc
+training_split: train
+validation_split: validation
+test_split: test
+doc_to_text: "Question: {{question}}\nA. {{choices.text[0]}}\nB. {{choices.text[1]}}\nC. {{choices.text[2]}}\nD. {{choices.text[3]}}"
+doc_to_target: "{{choices.label.index(answerKey)}}"
+doc_to_choice: "{{choices.text}}"
+metadata:
+  version: 3.0
+dataset_kwargs:
+  trust_remote_code: true

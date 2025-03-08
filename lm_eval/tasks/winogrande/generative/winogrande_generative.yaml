@@ -1,0 +1,6 @@
+description: "Winogrande is a powerful adversarial dataset for testing commonsense reasoning. This is a generative version where the model is expected to output answers in a \\boxed{} format."
+include: "_default_template_yaml"
+task: winogrande_generative
+task_alias: winogrande (generative)
+should_decontaminate: true
+doc_to_decontamination_query: "{{sentence}}"

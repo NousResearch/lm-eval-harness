@@ -1,0 +1,4 @@
+description: "The HellaSwag dataset is a benchmark for evaluating commonsense NLI. It includes a collection of context sentences from ActivityNet Captions and WikiHow with multiple possible continuations. This version uses a generative approach where the model must produce a boxed answer."
+include: "_default_template_yaml"
+task: hellaswag_generative
+task_alias: hellaswag

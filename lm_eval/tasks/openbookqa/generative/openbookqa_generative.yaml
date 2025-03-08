@@ -1,0 +1,4 @@
+task: openbookqa_generative
+task_alias: OpenBookQA (Generative)
+include: "_default_template_yaml"
+description: "The OpenBookQA dataset is a question-answering dataset modeled after open book exams. This is a generative version where the model is expected to output answers in a \\boxed{} format."

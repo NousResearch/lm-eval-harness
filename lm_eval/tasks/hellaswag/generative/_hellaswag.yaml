@@ -1,0 +1,10 @@
+group: hellaswag_generative
+group_alias: hellaswag (generative)
+task:
+  - hellaswag_generative
+aggregate_metric_list:
+  - aggregation: mean
+    metric: exact_match
+    weight_by_size: true
+metadata:
+  version: 3.0

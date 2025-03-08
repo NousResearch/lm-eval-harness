@@ -1,0 +1,4 @@
+task: piqa_generative
+task_alias: PIQA (Generative)
+include: "_default_template_yaml"
+description: "The PIQA (Physical Interaction Question Answering) dataset is a question-answering dataset that tests physical commonsense knowledge. This is a generative version where the model is expected to output answers in a \\boxed{} format."

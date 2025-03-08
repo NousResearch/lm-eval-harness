@@ -1,0 +1,7 @@
+task: arc_easy_generative
+task_alias: ARC-Easy (Generative)
+dataset_name: ARC-Easy
+include: "_default_template_yaml"
+description: "The ARC Easy dataset is a multiple-choice dataset for question answering, containing easier questions drawn from science exams from grade 3 to grade 9. This is a generative version where the model is expected to output answers in a \\boxed{} format."
+should_decontaminate: true
+doc_to_decontamination_query: "Question: {{question}}\nAnswer:"

@@ -1,0 +1,22 @@
+include: ../../templates/generative_template.yaml
+dataset_path: lukaemon/bbh
+test_split: test
+doc_to_target: "{{target}}"
+num_fewshot: 0
+generation_kwargs:
+  do_sample: false
+  temperature: 0.0
+filter_list:
+  - name: "flexible-extract"
+    filter:
+      - function: "regex"
+        group_select: -1
+        regex_pattern: "\\\\boxed\\{(.+?)\\}"
+      - function: "take_first"
+  - name: "strict-match"
+    filter:
+      - function: "regex"
+        regex_pattern: "((?<=The answer is )(.*)(?=.)|(?<=the answer is )(.*)(?=.)|(?<=The answer: )(.*)(?=.)|(?<=The final answer: )(.*)(?=.))"
+      - function: "take_first"
+metadata:
+  version: 3.0

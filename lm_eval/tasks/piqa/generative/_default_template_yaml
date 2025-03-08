@@ -1,0 +1,7 @@
+include: ../../templates/generative_template.yaml
+dataset_path: piqa
+dataset_name: null
+test_split: validation
+doc_to_text: "Question: {{goal}}\nA. {{sol1}}\nB. {{sol2}}"
+doc_to_target: "label"
+doc_to_choice: "{{[sol1, sol2]}}"

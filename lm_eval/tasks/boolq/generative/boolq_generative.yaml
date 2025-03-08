@@ -1,0 +1,4 @@
+task: boolq_generative
+task_alias: BoolQ (Generative)
+include: "_default_template_yaml"
+description: "The BoolQ dataset consists of yes/no questions about Wikipedia paragraphs. This is a generative version where the model is expected to output answers in a \\boxed{} format."
