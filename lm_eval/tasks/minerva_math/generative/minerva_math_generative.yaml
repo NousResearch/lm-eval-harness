@@ -1,0 +1,18 @@
+group: minerva_math_generative
+task:
+  - minerva_math_algebra_generative
+  - minerva_math_counting_and_prob_generative
+  - minerva_math_geometry_generative
+  - minerva_math_intermediate_algebra_generative
+  - minerva_math_num_theory_generative
+  - minerva_math_prealgebra_generative
+  - minerva_math_precalc_generative
+aggregate_metric_list:
+  - metric: exact_match
+    aggregation: mean
+    weight_by_size: true
+  - metric: math_verify
+    aggregation: mean
+    weight_by_size: true
+metadata:
+  version: 1.0

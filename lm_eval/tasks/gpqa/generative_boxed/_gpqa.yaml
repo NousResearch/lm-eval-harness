@@ -1,0 +1,12 @@
+group: gpqa_generative
+group_alias: GPQA (Generative)
+task:
+  - gpqa_main_generative
+  - gpqa_diamond_generative
+  - gpqa_extended_generative
+aggregate_metric_list:
+  - aggregation: mean
+    metric: exact_match
+    weight_by_size: true
+metadata:
+  version: 3.0

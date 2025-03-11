@@ -9,14 +9,11 @@ metric_list:
     ignore_punctuation: true
     ignore_case: true
 filter_list:
-  - name: "flexible-extract"
+  - name: "flexible-extract-nous"
     filter:
-      - function: "multi_choice_regex"
+      - function: "regex"
         group_select: -1
-        ignore_case: true
-        ignore_punctuation: true
-        regex_pattern: "\\\\boxed\\{([A-D])\\}"
-        choices_field: "choices"
+        regex_pattern: "^(?:\\\\*\\\\*\\\\s*)?(?:final\\\\s+)?answer\\\\s*:\\\\s*(?:\\\\*\\\\*\\\\s*)?(.+)$"
       - function: "take_first"
 metadata:
   version: 3.0

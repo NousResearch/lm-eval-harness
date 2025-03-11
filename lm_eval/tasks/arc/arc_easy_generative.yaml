@@ -1,0 +1,6 @@
+tag:
+  - llama
+task: arc_easy_generative
+include: arc_challenge_generative.yaml
+dataset_path: allenai/ai2_arc
+dataset_name: ARC-Easy

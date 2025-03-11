@@ -1,7 +1,0 @@
-task: arc_challenge_generative
-task_alias: ARC-Challenge (Generative)
-dataset_name: ARC-Challenge
-include: "_default_template_yaml"
-description: "The ARC Challenge dataset is a multiple-choice dataset for question answering, containing questions drawn from science exams from grade 3 to grade 9. This is a generative version where the model is expected to output answers in a \\boxed{} format."
-should_decontaminate: true
-doc_to_decontamination_query: "Question: {{question}}\nAnswer:"

@@ -8,10 +8,7 @@ doc_to_choice: ["no", "yes"]
 filter_list:
   - name: "flexible-extract"
     filter:
-      - function: "multi_choice_regex"
+      - function: "regex"
         group_select: -1
-        ignore_case: true
-        ignore_punctuation: true
         regex_pattern: "\\\\boxed\\{(yes|no)\\}"
-        choices_field: "choices"
       - function: "take_first"

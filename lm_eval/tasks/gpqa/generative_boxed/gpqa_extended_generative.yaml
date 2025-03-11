@@ -1,0 +1,4 @@
+# Generated configuration
+dataset_name: gpqa_extended
+include: _gpqa_generative_boxed_yaml
+task: gpqa_extended_generative

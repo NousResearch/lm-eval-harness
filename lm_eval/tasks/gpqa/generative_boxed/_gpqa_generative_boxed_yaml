@@ -1,0 +1,12 @@
+dataset_path: Idavidrein/gpqa
+include: ../../templates/generative_template.yaml
+tag: gpqa
+process_docs: !function utils.process_docs
+training_split: train
+# Because huggingface dataset only has train split
+validation_split: train
+test_split: null
+doc_to_text: "Question: {{Question}}\nChoices:\n(A) {{choice1}}\n(B) {{choice2}}\n(C) {{choice3}}\n(D) {{choice4}}"
+doc_to_target: answer
+metadata:
+  version: 2.0

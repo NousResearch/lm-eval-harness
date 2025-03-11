@@ -10,12 +10,9 @@ doc_to_choice: ["1", "2"]
 filter_list:
   - name: "flexible-extract"
     filter:
-      - function: "multi_choice_regex"
+      - function: "regex"
         group_select: -1
-        ignore_case: true
-        ignore_punctuation: true
         regex_pattern: "\\\\boxed\\{([12])\\}"
-        choices_field: "choices"
       - function: "take_first"
 metadata:
   version: 3.0

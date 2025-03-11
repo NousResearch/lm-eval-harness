@@ -1,0 +1,13 @@
+tag:
+  - llama
+task: arc_challenge_generative
+include: ../templates/generative_template.yaml
+dataset_path: allenai/ai2_arc
+dataset_name: ARC-Challenge
+training_split: train
+validation_split: validation
+test_split: test
+doc_to_text: 'Given the following question and four candidate answers (A, B, C and D), choose the best answer.\nQuestion: {{question.strip()}}\nA. {{choices.text[0]}}\nB. {{choices.text[1]}}\nC. {{choices.text[2]}}{% if choices.text|length > 3 %}\nD. {{choices.text[3]}}{% endif %}'
+doc_to_target: "{{ 'ABCD'[answerKey|int - 1] if answerKey|string in '1234' else answerKey }}"
+metadata:
+  version: 1.0

@@ -1,0 +1,5 @@
+tag:
+  - math_word_problems
+task: minerva_math_algebra_generative
+dataset_name: algebra
+include: _minerva_math_generative_yaml
