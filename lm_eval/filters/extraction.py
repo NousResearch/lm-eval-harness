@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Union
+from typing import Union, List, Dict, Optional
 
 from lm_eval.api.filter import Filter
 from lm_eval.api.registry import register_filter
@@ -332,3 +332,160 @@ class MultiChoiceRegexFilter(RegexFilter):
             filtered_resps.append(filtered)
 
         return filtered_resps
+
+
+@register_filter("extract_answer_nous")
+class ExtractAnswerFilter(Filter):
+    """A filter that extracts text between specified bounds.
+    
+    This filter extracts text between left and right bounds in a response.
+    It can handle multiple bound pairs and returns the rightmost (last) match.
+    If a left bound is missing, it uses the start of the string.
+    If a right bound is missing, it uses the end of the string.
+    
+    Args:
+        bounds (List[Dict[str, str]]): A list of bound dictionaries with keys:
+            - "left_bound" (str): The left boundary text (start of string if empty)
+            - "right_bound" (str): The right boundary text (end of string if empty)
+            - "include_bounds" (Union[bool, str], optional): Controls which bounds to include:
+              - False: Don't include either bound (default)
+              - True/"both": Include both bounds
+              - "left": Include only the left bound
+              - "right": Include only the right bound
+        fallback (str, default="[invalid]"): Value to return when no match is found
+        
+    Examples:
+        >>> filter = ExtractAnswerFilter(bounds=[{"left_bound": "<answer>", "right_bound": "</answer>"}])
+        >>> filter.apply([["The <answer>42</answer> is correct."]], [{}])
+        [[["42"]]]
+        
+        >>> filter = ExtractAnswerFilter(bounds=[
+        ...     {"left_bound": "", "right_bound": ".", "include_bounds": "right"}, 
+        ...     {"left_bound": "Answer: ", "right_bound": "", "include_bounds": "left"}
+        ... ])
+        >>> filter.apply([["Answer: 42"]], [{}])
+        [[["Answer: 42"]]]
+    """
+
+    def __init__(
+        self,
+        bounds: List[Dict[str, str]],
+        fallback: str = "[invalid]",
+    ) -> None:
+        self.bounds = bounds
+        self.fallback = fallback
+
+    def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:
+        filtered_resps = []
+        
+        for response_set in resps:
+            filtered_set = []
+            for resp in response_set:
+                extracted = self._extract_from_bounds(resp)
+                filtered_set.append(extracted if extracted is not None else self.fallback)
+            filtered_resps.append(filtered_set)
+        
+        return filtered_resps
+    
+    def _should_include_bound(self, include_bounds, bound_type):
+        """Determine if a specific bound should be included based on include_bounds setting."""
+        if include_bounds is True or include_bounds == "both":
+            return True
+        if bound_type == "left" and include_bounds == "left":
+            return True
+        if bound_type == "right" and include_bounds == "right":
+            return True
+        return False
+    
+    def _extract_from_bounds(self, text: str) -> Optional[str]:
+        """Extract text between bounds, returning the rightmost match."""
+        all_matches = []
+        
+        for bound_pair in self.bounds:
+            left_bound = bound_pair.get("left_bound", "")
+            right_bound = bound_pair.get("right_bound", "")
+            include_bounds = bound_pair.get("include_bounds", False)
+            
+            # If both bounds are empty, return the whole text
+            if not left_bound and not right_bound:
+                return text
+            
+            # Special handling for nested tags with the same left and right bound markers
+            if left_bound and right_bound and left_bound == "<answer>" and right_bound == "</answer>":
+                # Use a more careful approach for potentially nested XML-like tags
+                matches = []
+                pos = 0
+                
+                while True:
+                    # Find the next opening tag
+                    start_tag_pos = text.find(left_bound, pos)
+                    if start_tag_pos == -1:
+                        break
+                        
+                    # Find the corresponding closing tag (nearest one after this opening)
+                    end_tag_pos = text.find(right_bound, start_tag_pos + len(left_bound))
+                    if end_tag_pos == -1:
+                        break
+                    
+                    # Extract content
+                    include_left = self._should_include_bound(include_bounds, "left")
+                    include_right = self._should_include_bound(include_bounds, "right")
+                    
+                    content_start = start_tag_pos if include_left else start_tag_pos + len(left_bound)
+                    content_end = end_tag_pos + len(right_bound) if include_right else end_tag_pos
+                    
+                    content = text[content_start:content_end]
+                    matches.append(content)
+                    
+                    # Move past this closing tag
+                    pos = end_tag_pos + len(right_bound)
+                
+                if matches:
+                    all_matches.extend(matches)
+                continue
+                
+            # Regular processing for non-nested cases
+            # Find all instances matching the bounds
+            start_pos = 0
+            while start_pos < len(text):
+                # Find left bound
+                if left_bound:
+                    left_pos = text.find(left_bound, start_pos)
+                    if left_pos == -1:
+                        break
+                    include_left = self._should_include_bound(include_bounds, "left")
+                    start = left_pos if include_left else left_pos + len(left_bound)
+                else:
+                    # If no left bound, use current position
+                    left_pos = start_pos
+                    start = left_pos
+                
+                # Find right bound
+                if right_bound:
+                    right_pos = text.find(right_bound, left_pos + len(left_bound) if left_bound else left_pos)
+                    if right_pos == -1:
+                        break
+                    include_right = self._should_include_bound(include_bounds, "right")
+                    end = right_pos + len(right_bound) if include_right else right_pos
+                else:
+                    # If no right bound, go to end of string
+                    end = len(text)
+                    right_pos = end
+                    
+                # If we didn't move forward, break to avoid infinite loop
+                if (not left_bound and not right_bound) or (start_pos == right_pos):
+                    break
+                
+                # Extract the text between bounds
+                extracted = text[start:end]
+                all_matches.append(extracted)
+                
+                # Move past this match
+                # For missing left bound, only take the first segment
+                if not left_bound:
+                    break
+                
+                start_pos = right_pos + len(right_bound) if right_bound else end
+        
+        # Return the rightmost (last) match if any were found
+        return all_matches[-1] if all_matches else None

@@ -3,7 +3,7 @@
 # Run multiple generative evaluations
 
 # Choose which tasks to run
-TASKS=${4:-"arc_challenge_generative,arc_easy_generative,openbookqa_generative,piqa_generative,boolq_generative,winogrande_generative,bbh_generative_boolean_expressions"}
+TASKS=${4:-"arc_challenge_generative,arc_easy_generative,openbookqa_generative,piqa_generative,boolq_generative,winogrande_generative,bbh_generative_boolean_expressions,gpqa_main_generative"}
 
 SYSTEM_PROMPT="You are a deep thinking AI, you may use extremely long chains of thought to deeply consider the problem and deliberate with yourself via systematic reasoning processes to help come to a correct solution prior to answering. You should enclose your thoughts and internal monologue inside <think> </think> tags, and then provide your solution or response to the problem. Always provide your multiple choice answer letter in the format: The answer is \\boxed{<LETTER>}."
 
