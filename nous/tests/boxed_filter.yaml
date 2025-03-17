@@ -1,0 +1,5 @@
+filter_list:
+  - name: balanced_extractor
+    left_bound: '\boxed{'
+    right_bound: '}'
+    include_bounds: true

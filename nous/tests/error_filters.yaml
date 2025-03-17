@@ -1,0 +1,6 @@
+filter_list:
+  - name: extract_answer_nous
+    # Missing required 'bounds' parameter, this should fail
+  - name: regex
+    regex_pattern: "The answer is: (.+)"
+  - name: remove_whitespace

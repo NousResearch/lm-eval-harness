@@ -1,0 +1,6 @@
+filter_list:
+  # This filter will return the entire text
+  - name: extract_answer_nous
+  # This filter will apply regex to the entire text
+  - name: regex
+    regex_pattern: "answer is: ([0-9]+)"

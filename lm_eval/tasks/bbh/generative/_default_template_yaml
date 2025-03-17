@@ -1,22 +1,31 @@
 include: ../../templates/generative_template.yaml
 dataset_path: lukaemon/bbh
 test_split: test
+doc_to_text: "{{input}}"
 doc_to_target: "{{target}}"
 num_fewshot: 0
-generation_kwargs:
-  do_sample: false
-  temperature: 0.0
-filter_list:
-  - name: "flexible-extract"
-    filter:
-      - function: "regex"
-        group_select: -1
-        regex_pattern: "\\\\boxed\\{(.+?)\\}"
-      - function: "take_first"
-  - name: "strict-match"
-    filter:
-      - function: "regex"
-        regex_pattern: "((?<=The answer is )(.*)(?=.)|(?<=the answer is )(.*)(?=.)|(?<=The answer: )(.*)(?=.)|(?<=The final answer: )(.*)(?=.))"
-      - function: "take_first"
 metadata:
   version: 3.0
+
+filter_list:
+  - name: "extract_answer_nous"
+    filter:
+      - function: "extract_answer_nous"
+        bounds:
+          - left_bound: "</think>"
+            include_bounds: false
+            case_insensitive: true
+      - function: "extract_answer_nous"
+        bounds:
+          - left_bound: <answer>
+            right_bound: </answer>
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer: "
+            right_bound: ""
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer: "
+            right_bound: "**"
+            include_bounds: false
+            case_insensitive: true

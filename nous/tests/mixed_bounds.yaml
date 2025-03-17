@@ -1,0 +1,10 @@
+filter_list:
+  # First filter passes the entire text
+  - name: extract_answer_nous
+  # Second filter extracts text between specific bounds
+  - name: extract_answer_nous
+    bounds:
+      - left_bound: "The answer is: "
+        right_bound: "."
+  # Third filter removes whitespace
+  - name: remove_whitespace

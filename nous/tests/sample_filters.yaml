@@ -1,0 +1,7 @@
+filter_list:
+  - name: extract_answer_nous
+    bounds:
+      - left_bound: "<answer>"
+        right_bound: "</answer>"
+        case_insensitive: both
+  - name: remove_whitespace

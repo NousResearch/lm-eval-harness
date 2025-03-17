@@ -1,0 +1,10 @@
+filter_list:
+  - name: regex
+    regex_pattern: "The answer is: (.+)"
+    fallback: "No answer found"
+  - name: remove_whitespace
+  - name: extract_answer_nous
+    bounds:
+      - left_bound: ""
+        right_bound: "."
+    fallback: "No period found"
