@@ -1,0 +1,4 @@
+"dataset_name": "movie_recommendation"
+"include": "_default_template_yaml"
+"description": "Recommend movies based on user preferences."
+"task": "bbh_movie_recommendation_generative"

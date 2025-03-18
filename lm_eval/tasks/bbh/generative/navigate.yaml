@@ -1,0 +1,4 @@
+"dataset_name": "navigate"
+"include": "_default_template_yaml"
+"description": "Navigate through a grid following directional instructions."
+"task": "bbh_navigate_generative"

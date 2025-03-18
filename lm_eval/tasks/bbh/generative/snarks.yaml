@@ -1,0 +1,4 @@
+"dataset_name": "snarks"
+"include": "_default_template_yaml"
+"description": "Identify sarcastic or snarky remarks in text."
+"task": "bbh_snarks_generative"

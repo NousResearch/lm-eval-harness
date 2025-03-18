@@ -1,0 +1,4 @@
+"dataset_name": "disambiguation_qa"
+"include": "_default_template_yaml"
+"description": "Answer questions that have potentially ambiguous interpretations."
+"task": "bbh_disambiguation_qa_generative"

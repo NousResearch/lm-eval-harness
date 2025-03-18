@@ -1,0 +1,4 @@
+"dataset_name": "salient_translation_error_detection"
+"include": "_default_template_yaml"
+"description": "Detect errors in translations between languages."
+"task": "bbh_salient_translation_error_detection_generative"

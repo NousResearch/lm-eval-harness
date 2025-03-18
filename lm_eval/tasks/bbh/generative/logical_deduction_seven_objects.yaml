@@ -1,0 +1,4 @@
+"dataset_name": "logical_deduction_seven_objects"
+"include": "_default_template_yaml"
+"description": "Solve logical deduction problems with seven objects."
+"task": "bbh_logical_deduction_seven_objects_generative"

@@ -1,0 +1,4 @@
+"dataset_name": "tracking_shuffled_objects_five_objects"
+"include": "_default_template_yaml"
+"description": "Track the positions of five objects after a series of swaps."
+"task": "bbh_tracking_shuffled_objects_five_objects_generative"

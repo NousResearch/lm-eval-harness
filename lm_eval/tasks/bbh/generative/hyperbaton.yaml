@@ -1,0 +1,4 @@
+"dataset_name": "hyperbaton"
+"include": "_default_template_yaml"
+"description": "Reorder words with unusual arrangements to make sensible sentences."
+"task": "bbh_hyperbaton_generative"

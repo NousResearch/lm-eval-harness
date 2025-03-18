@@ -1,0 +1,4 @@
+"dataset_name": "logical_deduction_five_objects"
+"include": "_default_template_yaml"
+"description": "Solve logical deduction problems with five objects."
+"task": "bbh_logical_deduction_five_objects_generative"

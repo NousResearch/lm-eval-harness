@@ -1,0 +1,4 @@
+"dataset_name": "penguins_in_a_table"
+"include": "_default_template_yaml"
+"description": "Answer questions based on tabular data about penguins."
+"task": "bbh_penguins_in_a_table_generative"

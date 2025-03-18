@@ -1,0 +1,4 @@
+"dataset_name": "object_counting"
+"include": "_default_template_yaml"
+"description": "Count objects described in a text passage."
+"task": "bbh_object_counting_generative"

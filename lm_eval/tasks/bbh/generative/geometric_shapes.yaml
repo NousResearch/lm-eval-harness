@@ -1,0 +1,4 @@
+"dataset_name": "geometric_shapes"
+"include": "_default_template_yaml"
+"description": "Reason about geometric shapes and their properties."
+"task": "bbh_geometric_shapes_generative"

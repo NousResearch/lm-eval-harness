@@ -1,0 +1,4 @@
+"dataset_name": "causal_judgement"
+"include": "_default_template_yaml"
+"description": "A task for determining if a particular event caused another event."
+"task": "bbh_causal_judgement_generative"

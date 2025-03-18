@@ -1,0 +1,4 @@
+"dataset_name": "formal_fallacies"
+"include": "_default_template_yaml"
+"description": "Identify logical fallacies in arguments."
+"task": "bbh_formal_fallacies_generative"

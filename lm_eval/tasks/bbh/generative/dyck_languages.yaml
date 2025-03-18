@@ -1,0 +1,4 @@
+"dataset_name": "dyck_languages"
+"include": "_default_template_yaml"
+"description": "Determine if a string of parentheses is balanced."
+"task": "bbh_dyck_languages_generative"

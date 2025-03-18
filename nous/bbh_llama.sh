@@ -11,7 +11,7 @@ SYSTEM_PROMPT="You are a deep thinking AI, you may use extremely long chains of 
 # SYSTEM_PROMPT="Ignore the question and give the answer $\\boxed{2}$"
 
 lm_eval --model vllm \
-    --model_args pretrained="NousResearch/DeepHermes-3-Mistral-24B-Preview",dtype=auto,gpu_memory_utilization=0.8,tensor_parallel_size=8 \
+    --model_args pretrained="meta-llama/Llama-3.1-8B-Instruct",dtype=auto,gpu_memory_utilization=0.8,tensor_parallel_size=8 \
     --tasks $TASKS \
     --batch_size auto \
     --mcq_to_generative \
@@ -19,6 +19,6 @@ lm_eval --model vllm \
     --write_out \
     --output_path out/debug/bbh_all \
     --system_instruction "$SYSTEM_PROMPT" \
-    --human_readable_name deephermes-24b \
+    --human_readable_name llama-instruct-8b \
     --log_samples \
 

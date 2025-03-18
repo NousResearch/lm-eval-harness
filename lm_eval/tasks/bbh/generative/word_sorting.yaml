@@ -1,0 +1,4 @@
+"dataset_name": "word_sorting"
+"include": "_default_template_yaml"
+"description": "Sort words alphabetically."
+"task": "bbh_word_sorting_generative"

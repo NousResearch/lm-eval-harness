@@ -1,0 +1,4 @@
+"dataset_name": "date_understanding"
+"include": "_default_template_yaml"
+"description": "A task that involves reasoning about dates and times."
+"task": "bbh_date_understanding_generative"

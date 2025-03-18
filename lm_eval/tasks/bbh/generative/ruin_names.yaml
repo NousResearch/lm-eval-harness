@@ -1,0 +1,4 @@
+"dataset_name": "ruin_names"
+"include": "_default_template_yaml"
+"description": "Identify names that can be 'ruined' by removing a letter."
+"task": "bbh_ruin_names_generative"
