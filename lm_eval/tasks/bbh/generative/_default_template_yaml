@@ -25,10 +25,6 @@ filter_list:
           - left_bound: "answer:"
             include_bounds: false
             case_insensitive: true
-          - left_bound: "answer: ("
-            right_bound: ")"
-            include_bounds: false
-            case_insensitive: true
           - left_bound: "answer: "
             right_bound: "**"
             include_bounds: false
@@ -36,18 +32,14 @@ filter_list:
           - left_bound: "answer**: "
             include_bounds: false
             case_insensitive: true
-          - left_bound: "answer**: ("
-            right_bound: ")"
-            include_bounds: false
-            case_insensitive: true
           - left_bound: "answer:** "
             include_bounds: false
             case_insensitive: true
-          - left_bound: "answer:** ("
-            right_bound: ")"
+          - left_bound: "\\boxed{"
+            right_bound: "}"
             include_bounds: false
             case_insensitive: true
-          - left_bound: "\\boxed{"
+          - left_bound: "\\text{"
             right_bound: "}"
             include_bounds: false
             case_insensitive: true
