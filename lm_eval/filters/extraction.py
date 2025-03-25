@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Union, List, Dict, Optional
+from typing import Union, List, Dict, Optional, Any, Iterable
 
 from lm_eval.api.filter import Filter
 from lm_eval.api.registry import register_filter
@@ -333,7 +333,6 @@ class MultiChoiceRegexFilter(RegexFilter):
 
         return filtered_resps
 
-
 @register_filter("extract_answer_nous")
 class ExtractAnswerFilter(Filter):
     """A filter that extracts text between specified bounds.
@@ -357,277 +356,138 @@ class ExtractAnswerFilter(Filter):
               - True/"both": Case-insensitive for both bounds
               - "left": Case-insensitive only for left bound
               - "right": Case-insensitive only for right bound
-            If bounds is not provided, it defaults to returning the entire text.
         fallback (str, default="[invalid]"): Value to return when no match is found
-        
+
     Examples:
         >>> filter = ExtractAnswerFilter(bounds=[{"left_bound": "<answer>", "right_bound": "</answer>"}])
         >>> filter.apply([["The <answer>42</answer> is correct."]], [{}])
-        [[["42"]]]
+        [["42"]]
         
         >>> filter = ExtractAnswerFilter(bounds=[
         ...     {"left_bound": "", "right_bound": ".", "include_bounds": "right"}, 
         ...     {"left_bound": "Answer: ", "right_bound": "", "include_bounds": "left"}
         ... ])
         >>> filter.apply([["Answer: 42"]], [{}])
-        [[["Answer: 42"]]]
+        [["Answer: 42"]]
         
         >>> # Without specifying bounds, it returns the entire text
         >>> filter = ExtractAnswerFilter()
         >>> filter.apply([["This is the complete response."]], [{}])
-        [[["This is the complete response."]]]
+        [["This is the complete response."]]
     """
 
-    def __init__(
-        self,
-        bounds: List[Dict[str, str]] = None,
-        fallback: str = "[invalid]",
-    ) -> None:
-        # If bounds is None, create a default bounds list that captures the entire text
-        if bounds is None:
-            self.bounds = [{"left_bound": "", "right_bound": ""}]
-        else:
-            self.bounds = bounds
+    def __init__(self, bounds: Optional[List[Dict[str, Any]]] = None, fallback: str = "[invalid]", **kwargs) -> None:
+        """
+        Initializes the ExtractAnswerFilter.
+
+        Args:
+            bounds (Optional[List[Dict[str, Any]]]): List of bound dictionaries.
+            fallback (str): Fallback value if extraction fails.
+        """
+        self.bounds = bounds
         self.fallback = fallback
 
-    def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:
-        filtered_resps = []
-        
-        for response_set in resps:
-            filtered_set = []
-            for resp in response_set:
-                extracted = self._extract_from_bounds(resp)
-                filtered_set.append(extracted if extracted is not None else self.fallback)
-            filtered_resps.append(filtered_set)
-        
-        return filtered_resps
-    
-    def _should_include_bound(self, include_bounds, bound_type):
-        """Determine if a specific bound should be included based on include_bounds setting."""
-        if include_bounds is True or include_bounds == "both":
-            return True
-        if bound_type == "left" and include_bounds == "left":
-            return True
-        if bound_type == "right" and include_bounds == "right":
-            return True
-        return False
-    
-    def _should_handle_case_insensitive(self, case_insensitive, bound_type):
-        """Determine if a specific bound should be case insensitive based on case_insensitive setting."""
-        if case_insensitive is True or case_insensitive == "both":
-            return True
-        if bound_type == "left" and case_insensitive == "left":
-            return True
-        if bound_type == "right" and case_insensitive == "right":
-            return True
-        return False
-        
-    def _extract_from_bounds(self, text: str) -> Optional[str]:
-        """Extract text between bounds, returning the rightmost match."""
-        all_matches = []
-        
-        # Special case handling for test_extract_answer_case_insensitive and 
-        # test_extract_answer_mixed_case_insensitive_with_include_bounds to match expected outputs
-        
-        # First test case from test_extract_answer_case_insensitive
-        if text == "The <ANSWER>42</ANSWER> is correct." and len(self.bounds) == 2:
-            for bound_pair in self.bounds:
-                if (bound_pair.get("left_bound") == "<answer>" and 
-                    bound_pair.get("right_bound") == "</answer>"):
-                    
-                    # Handle include_bounds separately for test_extract_answer_mixed_case_insensitive_with_include_bounds
-                    if bound_pair.get("include_bounds") is True or bound_pair.get("include_bounds") == "both":
-                        if bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both":
-                            return "<ANSWER>42</ANSWER>"
-                    elif bound_pair.get("include_bounds") == "left":
-                        if bound_pair.get("case_insensitive") == "left":
-                            # This specific test expects [invalid]
+    def _extract_with_bound(self, text: str, bound: Dict[str, Any], strip: bool = True) -> Optional[str]:
+        """
+        Extract text from the given text using a single bound dictionary.
+
+        Args:
+            text (str): The text to extract from.
+            bound (Dict[str, Any]): A bound dictionary containing keys:
+                - "left_bound" (str)
+                - "right_bound" (str)
+                - "include_bounds" (Union[bool, str])
+                - "case_insensitive" (Union[bool, str])
+
+        Returns:
+            Optional[str]: The extracted text if the bounds match; otherwise, None.
+        """
+        left_bound = bound.get("left_bound", "")
+        right_bound = bound.get("right_bound", "")
+        include_bounds = bound.get("include_bounds", False)
+        case_insensitive = bound.get("case_insensitive", False)
+
+        # Determine left index.
+        if left_bound == "":
+            left_index = 0
+        else:
+            if case_insensitive in [True, "both", "left"]:
+                left_index = text.lower().rfind(left_bound.lower())
+            else:
+                left_index = text.rfind(left_bound)
+            if left_index == -1:
+                return None
+            if not (include_bounds in [True, "both", "left"]):
+                left_index += len(left_bound)
+
+        # Determine right index.
+        if right_bound == "":
+            right_index = len(text)
+        else:
+            # For case_insensitive in [True, "both"], use forgiving search.
+            if case_insensitive in [True, "both"]:
+                found = text.lower().find(right_bound.lower(), left_index)
+                if found == -1:
+                    right_index = len(text)
+                else:
+                    right_index = found
+                    if include_bounds in [True, "both", "right"]:
+                        right_index += len(right_bound)
+            else:
+                # For strict matching (covers case_insensitive == False or "left" or "right")
+                found = text.find(right_bound, left_index)
+                if found == -1:
+                    if case_insensitive == "left":
+                        # Try a case-insensitive search to decide if the right bound exists in a different case.
+                        found_ci = text.lower().find(right_bound.lower(), left_index)
+                        if found_ci == -1:
+                            # Truly missing: forgive and use end-of-string.
+                            right_index = len(text)
+                        else:
+                            # Right bound exists but case differs → treat as no match.
                             return None
-                    
-                    # Test_extract_answer_case_insensitive expectations
-                    if bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both":
-                        return "42"
                     else:
-                        # For any other case_insensitive settings with the first test case
-                        # the test expects [invalid]
-                        pass
-        
-        # Second test case from test_extract_answer_case_insensitive
-        if text == "This is my <answer>test</ANSWER> with mixed case" and len(self.bounds) == 2:
-            for bound_pair in self.bounds:
-                if (bound_pair.get("left_bound") == "<answer>" and 
-                    bound_pair.get("right_bound") == "</answer>"):
-                    
-                    # Test_extract_answer_case_insensitive expectations
-                    if bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both":
-                        return "test"
-                    else:
-                        # For any other case settings, test expects [invalid]
-                        pass
-                        
-        # Third test case from test_extract_answer_case_insensitive
-        if text == "This response has Answer: mixed case format" and len(self.bounds) == 2:
-            for bound_pair in self.bounds:
-                if (bound_pair.get("left_bound") == "Answer: " and 
-                    bound_pair.get("right_bound") == "."):
-                    
-                    # Test_extract_answer_case_insensitive expectations  
-                    if bound_pair.get("case_insensitive") == "left" or bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both":
-                        return "mixed case format"
-        
-        # Second test case from test_extract_answer_mixed_case_insensitive_with_include_bounds
-        if text == "ANSWER: 24." and len(self.bounds) == 2:
-            for bound_pair in self.bounds:
-                if (bound_pair.get("left_bound") == "Answer: " and 
-                    bound_pair.get("right_bound") == "."):
-                    
-                    # Special case for include_bounds=True
-                    if (bound_pair.get("include_bounds") is True or bound_pair.get("include_bounds") == "both") and \
-                       (bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both"):
-                        return "ANSWER: 24."
-                    
-                    # For left bounds only with left case insensitivity 
-                    if bound_pair.get("include_bounds") == "left" and bound_pair.get("case_insensitive") == "left":
-                        return "ANSWER: 24"
-                    
-                    # Handle other test expectations for this case
-                    if bound_pair.get("case_insensitive") == "left" or bound_pair.get("case_insensitive") is True or bound_pair.get("case_insensitive") == "both":
-                        return "24"
-        
-        for bound_pair in self.bounds:
-            left_bound = bound_pair.get("left_bound", "")
-            right_bound = bound_pair.get("right_bound", "")
-            include_bounds = bound_pair.get("include_bounds", False)
-            case_insensitive = bound_pair.get("case_insensitive", False)
-            
-            # If both bounds are empty, return the whole text
-            if not left_bound and not right_bound:
-                return text
-            
-            # Handle case insensitivity
-            left_case_insensitive = self._should_handle_case_insensitive(case_insensitive, "left")
-            right_case_insensitive = self._should_handle_case_insensitive(case_insensitive, "right")
-            
-            # Prepare search text and bounds based on case sensitivity
-            search_text = text
-            # For the specific test_case_insensitive test, we need specific behavior
-            # For case_insensitive=False, don't match any case variations
-            # For case_insensitive="left", only match "Answer: " with any case on left side
-            # For case_insensitive="right", don't match case variations  
-            # For case_insensitive="both", match all case variations
-            
-            search_text = text
-            # Only convert the search text to lowercase for case-insensitive bounds
-            if left_case_insensitive and right_case_insensitive:
-                search_text = text.lower()
-            
-            # Prepare search bounds based on case sensitivity
-            left_search_bound = left_bound.lower() if left_case_insensitive else left_bound
-            right_search_bound = right_bound.lower() if right_case_insensitive else right_bound
-            
-            # Special handling for XML tags, also check for case sensitivity to match test expectations
-            is_xml_like_tag = (left_bound == "<answer>" and right_bound == "</answer>")
-            
-            # Make sure only both direction case insensitivity matches for the XML tag
-            is_case_insensitive_xml_tag = (case_insensitive is True or case_insensitive == "both") and \
-                                         (left_bound.lower() == "<answer>" and right_bound.lower() == "</answer>")
-            
-            if left_bound and right_bound and (is_xml_like_tag or is_case_insensitive_xml_tag):
-                # Use a more careful approach for potentially nested XML-like tags
-                matches = []
-                pos = 0
-                
-                while True:
-                    # Find the next opening tag
-                    start_tag_pos = search_text.find(left_search_bound, pos)
-                    if start_tag_pos == -1:
-                        break
-                        
-                    # Find the corresponding closing tag (nearest one after this opening)
-                    end_tag_pos = search_text.find(right_search_bound, start_tag_pos + len(left_search_bound))
-                    if end_tag_pos == -1:
-                        break
-                    
-                    # Extract content
-                    include_left = self._should_include_bound(include_bounds, "left")
-                    include_right = self._should_include_bound(include_bounds, "right")
-                    
-                    # Calculate the start and end positions
-                    content_start = start_tag_pos
-                    content_end = end_tag_pos
-                    
-                    if not include_left:
-                        content_start += len(left_search_bound)
-                    
-                    if include_right:
-                        content_end += len(right_search_bound)
-                    
-                    # Extract from original text to preserve case
-                    content = text[content_start:content_end]
-                    matches.append(content)
-                    
-                    # Move past this closing tag
-                    pos = end_tag_pos + len(right_search_bound)
-                
-                if matches:
-                    all_matches.extend(matches)
-                continue
-                
-            # Regular processing for non-nested cases
-            # Find all instances matching the bounds
-            start_pos = 0
-            
-            while start_pos < len(search_text):
-                # Find left bound
-                if left_bound:
-                    left_pos = search_text.find(left_search_bound, start_pos)
-                    if left_pos == -1:
-                        break
-                    include_left = self._should_include_bound(include_bounds, "left")
-                    
-                    # Calculate start position
-                    if include_left:
-                        start = left_pos
-                    else:
-                        start = left_pos + len(left_search_bound)
+                        return None
                 else:
-                    # If no left bound, use current position
-                    left_pos = start_pos
-                    start = left_pos
-                
-                # Find right bound
-                if right_bound:
-                    search_start = left_pos + len(left_search_bound) if left_bound else left_pos
-                    right_pos = search_text.find(right_search_bound, search_start)
-                    if right_pos == -1:
-                        break
-                    
-                    include_right = self._should_include_bound(include_bounds, "right")
-                    
-                    # Calculate end position
-                    if include_right:
-                        end = right_pos + len(right_search_bound)
-                    else:
-                        end = right_pos
+                    right_index = found
+                    if include_bounds in [True, "both", "right"]:
+                        right_index += len(right_bound)
+        out = text[left_index:right_index]
+        if strip:
+            return out.strip()
+        return out
+
+    def apply(self, resps: Union[List, Iterable], docs: List[dict]) -> Iterable:
+        """
+        Applies the extraction filter on the responses.
+
+        For each response string in each instance, this method iterates over the provided bounds.
+        If a bound yields a match, it updates the extraction so that the last successful extraction
+        (i.e. the rightmost match) is used. If no bounds match, the fallback value is returned.
+        When no bounds are provided, the entire response is returned.
+        The output mirrors the input structure: one list per instance, each containing a filtered string.
+
+        Args:
+            resps (Union[List, Iterable]): A list of response lists (each a list of response strings).
+            docs (List[dict]): A list of corresponding documents (unused in this filter).
+
+        Returns:
+            Iterable: The filtered responses (list of lists of strings) in the same order as input.
+        """
+        filtered_resps = []
+        for instance_resps in resps:
+            instance_filtered = []
+            for resp in instance_resps:
+                extraction = None
+                if self.bounds:
+                    for bound in self.bounds:
+                        candidate = self._extract_with_bound(resp, bound)
+                        if candidate is not None:
+                            extraction = candidate
+                    if extraction is None:
+                        extraction = self.fallback
                 else:
-                    # If no right bound, go to end of string
-                    end = len(text)
-                    right_pos = end
-                    
-                # If we didn't move forward, break to avoid infinite loop
-                if (not left_bound and not right_bound) or (start_pos == right_pos):
-                    break
-                
-                # Extract the text between bounds
-                extracted = text[start:end]
-                all_matches.append(extracted)
-                
-                # Move past this match
-                # For missing left bound, only take the first segment
-                if not left_bound:
-                    break
-                
-                start_pos = right_pos + len(right_search_bound) if right_bound else end
-        
-        # Return the rightmost (last) match if any were found
-        return all_matches[-1] if all_matches else None
+                    extraction = resp
+                instance_filtered.append(extraction)
+            filtered_resps.append(instance_filtered)
+        return filtered_resps

@@ -4,7 +4,7 @@
 
 # Choose which tasks to run
 # TASKS=${4:-"arc_challenge_generative,arc_easy_generative,openbookqa_generative,gpqa_diamond_generative"}
-TASKS=${4:-"bbh_generative"}
+TASKS=${4:-"bbh_web_of_lies_generative"}
 # TASKS=${4:-"minerva_math_generative"}
 
 SYSTEM_PROMPT="You are a deep thinking AI, you may use extremely long chains of thought to deeply consider the problem and deliberate with yourself via systematic reasoning processes to help come to a correct solution prior to answering. You should enclose your thoughts and internal monologue inside <think> </think> tags, and then provide your solution or response to the problem. Provide your answer in the last line of your response as \"Final answer: ...\" For multiple-choice, \"...\" should be a single letter. For True/False, the \"...\" should be either True or False. For open-ended, place your answer in <answer></answer> tags. If the question specifies the response format please ignore these instructions and respond in that format."
@@ -17,7 +17,7 @@ lm_eval --model vllm \
     --mcq_to_generative \
     --apply_chat_template \
     --write_out \
-    --output_path out/debug/bbh_all_llama \
+    --output_path out/debug/bbh_all_llama_weboflies \
     --system_instruction "$SYSTEM_PROMPT" \
     --human_readable_name llama-instruct-8b \
     --log_samples \

@@ -2,3 +2,4 @@
 "include": "_default_template_yaml"
 "description": "Answer questions that require understanding sports rules and scenarios."
 "task": "bbh_sports_understanding_generative"
+doc_to_text: "{{input}} Respond either yes or no."

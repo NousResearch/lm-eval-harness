@@ -2,3 +2,4 @@
 "include": "_default_template_yaml"
 "description": "Determine who is telling the truth in a web of conflicting statements."
 "task": "bbh_web_of_lies_generative"
+doc_to_text: "{{input}} Respond either yes or no."

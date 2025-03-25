@@ -12,20 +12,42 @@ filter_list:
     filter:
       - function: "extract_answer_nous"
         bounds:
-          - left_bound: "</think>"
+          - left_bound: "</think>\n\n"
             include_bounds: false
             case_insensitive: true
-      - function: "extract_answer_nous"
-        bounds:
           - left_bound: <answer>
             right_bound: </answer>
             include_bounds: false
             case_insensitive: true
           - left_bound: "answer: "
-            right_bound: ""
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer:"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer: ("
+            right_bound: ")"
             include_bounds: false
             case_insensitive: true
           - left_bound: "answer: "
             right_bound: "**"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer**: "
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer**: ("
+            right_bound: ")"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer:** "
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer:** ("
+            right_bound: ")"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "\\boxed{"
+            right_bound: "}"
             include_bounds: false
             case_insensitive: true
