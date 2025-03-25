@@ -1,4 +1,6 @@
 "dataset_name": "dyck_languages"
 "include": "_default_template_yaml"
-"description": "Determine if a string of parentheses is balanced."
+"description": "Balance a sequence of opening brackets."
 "task": "bbh_dyck_languages_generative"
+doc_to_text: "{{input}} Respond with \"Final answer: \" followed by the completion. Don't repeat the opening."
+
