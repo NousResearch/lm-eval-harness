@@ -1,6 +1,6 @@
 import re
 import string
-from typing import Union, List, Dict, Optional, Any, Iterable
+from typing import Union, List, Dict, Optional, Any, Iterable, Pattern
 
 from lm_eval.api.filter import Filter
 from lm_eval.api.registry import register_filter
@@ -332,6 +332,87 @@ class MultiChoiceRegexFilter(RegexFilter):
             filtered_resps.append(filtered)
 
         return filtered_resps
+
+@register_filter("regex_fallback_to_original_nous")
+class RegexFallbackToOriginalFilter(Filter):
+    """A filter that extracts text using regex pattern matching with fallback to original text.
+    
+    This filter searches for a regex pattern in the text and returns the specified group if found.
+    If no match is found, it returns the original text instead of a fallback string.
+    
+    Args:
+        regex_pattern (str): The regex pattern to search for
+        group_select (int, default=-1): The group index to extract from the match 
+                                        (-1 means the last group)
+    
+    Examples:
+        >>> filter = RegexFallbackToOriginalFilter(regex_pattern=r"Answer: (.*)")
+        >>> filter.apply([["Answer: 42"]], [{}])
+        [["42"]]
+        
+        >>> filter = RegexFallbackToOriginalFilter(regex_pattern=r"Not found: (.*)")
+        >>> filter.apply([["Answer: 42"]], [{}])
+        [["Answer: 42"]]  # Returns original text since regex didn't match
+    """
+    
+    def __init__(
+        self,
+        regex_pattern: str,
+        group_select: int = -1,
+    ) -> None:
+        """Initialize the regex filter with fallback to original text.
+        
+        Args:
+            regex_pattern: Regular expression pattern to search for
+            group_select: Which regex capture group to return (-1 for last group)
+        """
+        self.regex_pattern = regex_pattern
+        self.regex = re.compile(regex_pattern)
+        self.group_select = group_select
+        
+    def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:
+        """Apply the regex filter to responses with fallback to original text.
+        
+        Args:
+            resps: List of response lists
+            docs: List of document dictionaries
+            
+        Returns:
+            List of filtered response lists
+        """
+        def process_response(resp: str) -> str:
+            # Try to match the regex
+            match = self.regex.search(resp)
+            if match:
+                # If we have a match, extract the specified group
+                groups = match.groups()
+                if not groups:
+                    # No capture groups, return the entire match
+                    return match.group(0)
+                
+                # Select the appropriate group
+                group_idx = self.group_select
+                if group_idx < 0:
+                    # Convert negative index to positive
+                    group_idx = len(groups) + group_idx
+                
+                # Ensure group index is within bounds
+                if 0 <= group_idx < len(groups):
+                    group = groups[group_idx]
+                    return group if group is not None else resp
+                
+                # If the group index is out of bounds, return the original text
+                return resp
+            
+            # If no match is found, return the original text
+            return resp
+            
+        # Process each response
+        return [
+            [process_response(resp) for resp in response_set]
+            for response_set in resps
+        ]
+
 
 @register_filter("extract_answer_nous")
 class ExtractAnswerFilter(Filter):

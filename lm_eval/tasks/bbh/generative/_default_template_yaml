@@ -8,7 +8,7 @@ metadata:
   version: 3.0
 
 filter_list:
-  - name: "extract_answer_nous"
+  - name: "extract_answer_nous_with_optional_mc_regex"
     filter:
       - function: "extract_answer_nous"
         bounds:
@@ -51,3 +51,7 @@ filter_list:
             right_bound: "}"
             include_bounds: false
             case_insensitive: true
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: \(([A-Za-z])\)
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: (?i)\b(yes|no|true|false|valid|invalid)\b
