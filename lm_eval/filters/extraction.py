@@ -563,7 +563,7 @@ class ExtractAnswerFilter(Filter):
                 if self.bounds:
                     for bound in self.bounds:
                         candidate = self._extract_with_bound(resp, bound)
-                        if candidate is not None:
+                        if candidate is not None and candidate != "":
                             extraction = candidate
                     if extraction is None:
                         extraction = self.fallback

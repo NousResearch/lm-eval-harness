@@ -35,6 +35,10 @@ filter_list:
           - left_bound: "answer:** "
             include_bounds: false
             case_insensitive: true
+          - left_bound: "the final answer is "
+            right_bound: "."
+            include_bounds: false
+            case_insensitive: true
           - left_bound: "\\boxed{"
             right_bound: "}"
             include_bounds: false
@@ -47,3 +51,5 @@ filter_list:
         regex_pattern: \(([A-Za-z])\)
       - function: "regex_fallback_to_original_nous"
         regex_pattern: (?i)\b(yes|no|true|false|valid|invalid)\b
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: \*\*(.*?)\*\*
