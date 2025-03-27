@@ -50,6 +50,8 @@ filter_list:
       - function: "regex_fallback_to_original_nous"
         regex_pattern: \(([A-Za-z])\)
       - function: "regex_fallback_to_original_nous"
+        regex_pattern: ^([A-Z])(?:[.)]|\.\s|\s*\()
+      - function: "regex_fallback_to_original_nous"
         regex_pattern: (?i)\b(yes|no|true|false|valid|invalid)\b
       - function: "regex_fallback_to_original_nous"
         regex_pattern: \*\*(.*?)\*\*
