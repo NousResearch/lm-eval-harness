@@ -1,6 +1,5 @@
 "dataset_name": "dyck_languages"
 "include": "_default_template_yaml"
-"description": "Balance a sequence of opening brackets."
+"description": "Balance a sequence of brackets."
 "task": "bbh_dyck_languages_generative"
-doc_to_text: "{{input}} Respond with \"Final answer: \" followed by the completion. Don't repeat the opening."
-
+doc_to_text: "{{input}}\n\nRespond with \"Final answer: \" followed by the completion. Don't repeat the brackets in the prompt."

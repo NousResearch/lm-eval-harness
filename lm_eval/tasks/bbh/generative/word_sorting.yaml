@@ -2,5 +2,5 @@
 "include": "_default_template_yaml"
 "description": "Sort words alphabetically."
 "task": "bbh_word_sorting_generative"
-doc_to_text: "{{input}} Respond with a space-separated list (no commas)."
+doc_to_text: "{{input}}\n\nRespond with \"Final answer:\" followed by a space-separated list like the input (no commas)."
 

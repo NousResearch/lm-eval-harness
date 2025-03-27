@@ -1,20 +1,65 @@
 output_type: generate_until
+
 generation_kwargs:
   until: []
   max_gen_toks: 16000
+
 metric_list:
   - metric: exact_match
     aggregation: mean
     higher_is_better: true
     ignore_punctuation: true
     ignore_case: true
+
 filter_list:
-  - name: "flexible-extract-nous"
+  - name: "extract_answer_nous_with_optional_mc_regex"
     filter:
-      - function: "regex"
-        group_select: -1
-        regex_pattern: "^(?:\\\\*\\\\*\\\\s*)?(?:final\\\\s+)?answer\\\\s*:\\\\s*(?:\\\\*\\\\*\\\\s*)?(.+)$"
-      - function: "take_first"
+      - function: "extract_answer_nous"
+        bounds:
+          - left_bound: "</think>\n\n"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: <answer>
+            right_bound: </answer>
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer: "
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer:"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer: "
+            right_bound: "**"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer**: "
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "answer:** "
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "the final answer is "
+            right_bound: "."
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "\\boxed{"
+            right_bound: "}"
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "\\text{"
+            right_bound: "}"
+            include_bounds: false
+            case_insensitive: true
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: \(([A-Za-z])\)
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: ^([A-Z])(?:[.)]|\.\s|\s*\()
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: (?i)\b(yes|no|true|false|valid|invalid)\b
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: \*\*(.*?)\*\*
+
 metadata:
   version: 3.0
 dataset_kwargs:
