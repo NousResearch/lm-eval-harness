@@ -1,0 +1,59 @@
+output_type: generate_until
+
+generation_kwargs:
+  until: []
+  max_gen_toks: 16000
+
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+    ignore_punctuation: true
+    ignore_case: true
+
+filter_list:
+  - name: "extract_multiple_choice_letter"
+    filter:
+      # First try specific patterns for extracting just the letter answer in various formats
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '\\*\\*Final answer: \\(([A-Z])\\)\\*\\*'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: 'Final answer: \\(([A-Z])\\)'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: 'The answer is \\(([A-Z])\\)'
+      - function: "regex_fallback_to_original_nous" 
+        regex_pattern: 'I think the answer is \\(?([A-Z])\\)?'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: 'Therefore,? the answer is \\(?([A-Z])\\)?'
+      # Bold patterns with just the letter
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '\\*\\*([A-Z])\\*\\*'
+      # LaTeX patterns for nested expressions
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '\\\\boxed\\{\\\\text\\{([A-Z])\\}\\}'
+      # Extract MC letter from answers matching (A), A: or Answer: A patterns
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '\\(([A-Z])\\)(?:[^A-Z0-9]|$)'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '^([A-Z])[:.)]\\s'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '(?i)answer(?:\\s+is)?(?:\\s*[:=]\\s*|\\s+)([A-Z])(?:[^A-Za-z0-9]|$)'
+      # Add more patterns to extract specific formats
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '<answer>([A-Z])</answer>'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: 'answer\\s*[=:]\\s*([A-Z])\\b'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: 'the\\s+final\\s+answer\\s+is\\s+([A-Z])\\b'
+      - function: "regex_fallback_to_original_nous" 
+        regex_pattern: '\\\\text\\{([A-Z])\\}'
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '\\\\boxed\\{([A-Z])\\}'
+      # Only target single letters as answers (after all other methods tried)
+      - function: "regex_fallback_to_original_nous"
+        regex_pattern: '(?:^|[^A-Za-z])([A-Z])(?![A-Za-z0-9])'
+
+metadata:
+  version: 3.0
+dataset_kwargs:
+  trust_remote_code: true

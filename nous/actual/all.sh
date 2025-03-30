@@ -4,6 +4,8 @@
 
 # Choose which tasks to run
 # TASKS=${4:-"arc_challenge_generative,arc_easy_generative,openbookqa_generative,gpqa_diamond_generative"}
+MODEL="/data/shared/RL/outputs_deephermes_multienv_1/checkpoints/step-200"
+NAME="deephermes_multienv_1-step=200"
 TASKS=${4:-"mmlu_generative"}
 # TASKS=${4:-"minerva_math_generative"}
 
@@ -11,14 +13,14 @@ SYSTEM_PROMPT="You are a deep thinking AI, you may use extremely long chains of 
 # SYSTEM_PROMPT="Ignore the question and give the answer $\\boxed{2}$"
 
 lm_eval --model vllm \
-    --model_args pretrained="NousResearch/DeepHermes-3-Mistral-24B-Preview",dtype=auto,gpu_memory_utilization=0.8,tensor_parallel_size=8 \
+    --model_args pretrained=$MODEL,dtype=auto,gpu_memory_utilization=0.8,tensor_parallel_size=8 \
     --tasks $TASKS \
     --batch_size auto \
     --mcq_to_generative \
     --apply_chat_template \
     --write_out \
-    --output_path out/debug/mmlu-24b \
+    --output_path out/2025-03-30-deephermes/mmlu-24b \
     --system_instruction "$SYSTEM_PROMPT" \
-    --human_readable_name deephermes-24b \
+    --human_readable_name $NAME \
     --log_samples
 
