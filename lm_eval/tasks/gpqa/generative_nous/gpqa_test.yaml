@@ -1,4 +1,0 @@
-# Test configuration
-dataset_name: gpqa_diamond
-include: _gpqa_test_yaml
-task: gpqa_test

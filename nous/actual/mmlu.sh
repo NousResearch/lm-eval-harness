@@ -21,8 +21,7 @@ lm_eval --model vllm \
     --mcq_to_generative \
     --apply_chat_template \
     --write_out \
-    --output_path out/2025-03-30-deephermes/mmlu-8b \
+    --output_path out/5x/2025-04-01-temp=0.2/mmlu-8b-tek \
     --system_instruction "$SYSTEM_PROMPT" \
     --human_readable_name $NAME \
     --log_samples
-

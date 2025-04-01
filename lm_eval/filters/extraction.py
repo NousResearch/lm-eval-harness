@@ -572,3 +572,195 @@ class ExtractAnswerFilter(Filter):
                 instance_filtered.append(extraction)
             filtered_resps.append(instance_filtered)
         return filtered_resps
+
+
+@register_filter("nous_lighteval_mc")
+class NousLightevalMCFilter(Filter):
+    """A filter for extracting multiple choice answers from LightEval-formatted responses.
+    
+    This filter processes multiple-choice responses in the format used by LightEval for 
+    benchmarks like MMLU and GPQA. It supports both letter-based and full text matching,
+    and handles the LightEval formatting standards.
+    
+    Args:
+        fallback (str, default="[invalid]"): Value to return when no match is found.
+        ignore_case (bool, default=True): Whether to ignore case when matching.
+        ignore_punctuation (bool, default=False): Whether to ignore punctuation when matching.
+        format_style (str, default="plain"): Output format style ("plain" for "A", "parens" for "(A)").
+        max_choices (int, default=26): Maximum number of choices to consider (A-Z).
+        answer_word (str, default="Answer"): The word preceding the answer (e.g., "Answer:").
+        
+    Examples:
+        >>> filter = NousLightevalMCFilter()
+        >>> docs = [{"choices": ["Paris", "London", "Berlin", "Rome"]}]
+        >>> filter.apply([["Answer: A", "The capital of France is Paris"]], docs)
+        [[["A", "A"]]]
+    """
+    
+    def __init__(
+        self, 
+        fallback: str = "[invalid]",
+        ignore_case: bool = True,
+        ignore_punctuation: bool = False,
+        format_style: str = "plain", 
+        max_choices: int = 26,
+        answer_word: str = "Answer",
+    ) -> None:
+        """Initialize the LightEval multiple choice filter."""
+        self.fallback = fallback
+        self.ignore_case = ignore_case
+        self.ignore_punctuation = ignore_punctuation
+        self.format_style = format_style
+        self.max_choices = max_choices
+        self.answer_word = answer_word
+        
+        # Prepare letter patterns (standard format like used in MMLU and GPQA)
+        self.letters = "".join([chr(ord("A") + i) for i in range(max_choices)])
+        
+        # Core regex patterns for letter matching
+        # This handles formats like:
+        # - "A" (plain letter)
+        # - "(A)" (parenthesized letter)
+        # - "A:" (letter with colon)
+        # - "Answer: A" (word followed by letter)
+        # - "The answer is A" (phrase containing letter)
+        self.letter_pattern = rf"(?:\(([{self.letters}])\))|(?:(?:{answer_word}|choice|option)?:?\s*([{self.letters}])(?:\s|$|\.|\,|\)|\]|\}}|:|;))"
+        self.letter_regex = re.compile(self.letter_pattern, re.IGNORECASE if ignore_case else 0)
+        
+        # For matching numerical responses like "1", "2", "3" (common in some benchmarks)
+        self.number_pattern = r"(?:\(([1-9][0-9]*)\))|(?:(?:answer|choice|option)?:?\s*([1-9][0-9]*)(?:\s|$|\.|\,|\)|\]|\}}|:|;))"
+        self.number_regex = re.compile(self.number_pattern)
+    
+    def _format_letter(self, letter: str) -> str:
+        """Format a letter based on format_style setting."""
+        if self.format_style == "parens":
+            return f"({letter})"
+        elif self.format_style == "plain":
+            return letter
+        # Additional formats could be added here
+        else:
+            return letter
+            
+    def _filter_text(self, text: str) -> str:
+        """Apply text filtering rules (case, punctuation)."""
+        if self.ignore_case:
+            text = text.lower()
+            
+        if self.ignore_punctuation:
+            text = text.translate(str.maketrans("", "", string.punctuation))
+            
+        return text.strip()
+    
+    def _build_choice_patterns(self, choices: list[str]) -> tuple:
+        """Build regex patterns and mapping for both full text and letter-based answers."""
+        # For matching full text of choices
+        choice_patterns = []
+        choice_to_letter = {}
+        
+        # For matching letter answers
+        letter_map = {}  # Maps raw letters to desired format
+        
+        for i, choice in enumerate(choices):
+            if i >= self.max_choices:
+                break
+                
+            # Get letter for this choice (A, B, C, etc.)
+            letter = chr(ord("A") + i)
+            formatted_letter = self._format_letter(letter)
+            
+            # Process choice text
+            processed_choice = self._filter_text(choice)
+            
+            # Add to full text matching
+            if processed_choice:
+                choice_patterns.append(re.escape(processed_choice))
+                choice_to_letter[processed_choice] = formatted_letter
+            
+            # Add to letter matching
+            letter_map[letter.upper()] = formatted_letter
+            letter_map[letter.lower()] = formatted_letter
+            
+            # Add numerical mapping (1-based)
+            number = str(i + 1)
+            letter_map[number] = formatted_letter
+            
+        # Create regex for full text matches
+        full_text_pattern = "|".join(choice_patterns) if choice_patterns else "(?!)"
+        full_text_regex = re.compile(full_text_pattern, re.IGNORECASE if self.ignore_case else 0)
+        
+        return full_text_regex, choice_to_letter, letter_map
+        
+    def _get_choices(self, doc: dict) -> list:
+        """Extract choices from the document, handle both direct and 'query_choices' field."""
+        if doc is None or not isinstance(doc, dict):
+            return []
+            
+        # Try standard 'choices' field first
+        choices = doc.get("choices")
+        if isinstance(choices, list) and choices:
+            return choices
+            
+        # Try LightEval-style field name
+        for field in ["query_choices", "choices_list", "options"]:
+            choices = doc.get(field)
+            if isinstance(choices, list) and choices:
+                return choices
+                
+        return []
+    
+    def _find_letter_match(self, text: str, letter_map: dict) -> Union[str, None]:
+        """Find letter/number matches in the response."""
+        # Try letter pattern first (A, B, C)
+        letter_matches = self.letter_regex.findall(text)
+        if letter_matches:
+            for match in letter_matches:
+                if isinstance(match, tuple):
+                    # Take first non-empty group
+                    match = next((m for m in match if m), None)
+                if match and match.upper() in letter_map:
+                    return letter_map[match.upper()]
+        
+        # Try number pattern (1, 2, 3)
+        number_matches = self.number_regex.findall(text)
+        if number_matches:
+            for match in number_matches:
+                if isinstance(match, tuple):
+                    match = next((m for m in match if m), None)
+                if match and match in letter_map:
+                    return letter_map[match]
+                    
+        return None
+    
+    def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:
+        """Apply the filter to extract multiple choice answers from responses."""
+        filtered_resps = []
+        
+        for responses, doc in zip(resps, docs):
+            choices = self._get_choices(doc)
+            full_text_re, choice_to_letter, letter_map = self._build_choice_patterns(choices)
+            
+            filtered = []
+            for resp in responses:
+                # Skip empty responses
+                if not resp or resp.isspace():
+                    filtered.append(self.fallback)
+                    continue
+                    
+                match = None
+                
+                # Try matching full text of choices
+                processed_resp = self._filter_text(resp)
+                for choice_text, letter in choice_to_letter.items():
+                    if choice_text in processed_resp:
+                        match = letter
+                        break
+                
+                # If no full text match, try letter/number matching
+                if not match:
+                    match = self._find_letter_match(resp, letter_map)
+                    
+                filtered.append(match if match else self.fallback)
+                
+            filtered_resps.append(filtered)
+            
+        return filtered_resps

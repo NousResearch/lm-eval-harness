@@ -1,8 +1,9 @@
 output_type: generate_until
-
+repeats: 5
 generation_kwargs:
   until: []
   max_gen_toks: 16000
+  temperature: 0.2
 
 metric_list:
   - metric: exact_match
@@ -12,9 +13,15 @@ metric_list:
     ignore_case: true
 
 filter_list:
+  # - name: "lighteval_nous_mc"
+  #   filter:
+  #     - function: "nous_lighteval_mc"
+  #       fallback: null
+  #       ignore_case: true
+  #       format_style: "plain"
   - name: "extract_multiple_choice_letter"
     filter:
-      # First try specific patterns for extracting just the letter answer in various formats
+      # Then try specific patterns for extracting just the letter answer in various formats
       - function: "regex_fallback_to_original_nous"
         regex_pattern: '\\*\\*Final answer: \\(([A-Z])\\)\\*\\*'
       - function: "regex_fallback_to_original_nous"
