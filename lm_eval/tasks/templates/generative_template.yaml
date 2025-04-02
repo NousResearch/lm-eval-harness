@@ -1,5 +1,5 @@
 output_type: generate_until
-repeats: 5
+# repeats: 5
 generation_kwargs:
   until: []
   max_gen_toks: 16000
@@ -47,6 +47,10 @@ filter_list:
             include_bounds: false
             case_insensitive: true
           - left_bound: "the final answer is "
+            right_bound: "."
+            include_bounds: false
+            case_insensitive: true
+          - left_bound: "best answer is: "
             right_bound: "."
             include_bounds: false
             case_insensitive: true

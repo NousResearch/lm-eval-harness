@@ -1,5 +1,5 @@
 output_type: generate_until
-repeats: 5
+# repeats: 5
 generation_kwargs:
   until: []
   max_gen_toks: 16000
