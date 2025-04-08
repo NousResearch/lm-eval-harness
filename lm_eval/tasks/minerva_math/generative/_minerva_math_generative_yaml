@@ -1,5 +1,9 @@
 dataset_path: EleutherAI/hendrycks_math
 include: ../../templates/generative_template.yaml
+generation_kwargs:
+  until: []
+  max_gen_toks: 16000
+  temperature: 0.4
 tag:
   - math_word_problems
 process_docs: !function utils.process_docs

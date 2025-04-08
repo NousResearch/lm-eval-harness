@@ -28,8 +28,6 @@ filter_list:
         regex_pattern: 'Final answer: \\(([A-Z])\\)'
       - function: "regex_fallback_to_original_nous"
         regex_pattern: 'The answer is \\(([A-Z])\\)'
-      - function: "regex_fallback_to_original_nous" 
-        regex_pattern: 'I think the answer is \\(?([A-Z])\\)?'
       - function: "regex_fallback_to_original_nous"
         regex_pattern: 'Therefore,? the answer is \\(?([A-Z])\\)?'
       # Bold patterns with just the letter

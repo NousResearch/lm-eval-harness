@@ -367,7 +367,11 @@ class RegexFallbackToOriginalFilter(Filter):
             group_select: Which regex capture group to return (-1 for last group)
         """
         self.regex_pattern = regex_pattern
-        self.regex = re.compile(regex_pattern)
+        try:
+            self.regex = re.compile(regex_pattern)
+        except Exception as e:
+            print("failed to compile pattern:", regex_pattern)
+            raise e
         self.group_select = group_select
         
     def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:

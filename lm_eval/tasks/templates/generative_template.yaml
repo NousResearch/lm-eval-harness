@@ -69,7 +69,7 @@ filter_list:
       - function: "regex_fallback_to_original_nous"
         regex_pattern: (?i)\b(yes|no|true|false|valid|invalid)\b
       - function: "regex_fallback_to_original_nous"
-        regex_pattern: \*\*(.*?)\*\*
+        regex_pattern: \*\*([A-Z])(?:\.\)?|\)\.?)?\*\*
 
 metadata:
   version: 3.0

@@ -1,5 +1,5 @@
 dataset_path: Idavidrein/gpqa
-include: ../../templates/generative_template_mc.yaml
+include: ../../templates/generative_template.yaml
 tag: gpqa
 process_docs: !function utils.process_docs
 training_split: train
