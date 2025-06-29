@@ -19,6 +19,10 @@ filter_list:
   #       fallback: null
   #       ignore_case: true
   #       format_style: "plain"
+  - name: "comprehensive_answer_extraction"
+    filter:
+      - function: "comprehensive_answer_extraction"
+        fallback: "[invalid]"
   - name: "extract_answer_nous_with_optional_mc_regex"
     filter:
       - function: "extract_answer_nous"

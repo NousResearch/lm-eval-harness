@@ -768,3 +768,316 @@ class NousLightevalMCFilter(Filter):
             filtered_resps.append(filtered)
             
         return filtered_resps
+
+
+@register_filter("comprehensive_answer_extraction")
+class ComprehensiveAnswerExtractionFilter(Filter):
+    """A truly comprehensive filter for extracting answers from any LLM response format.
+    
+    This filter uses a multi-stage hierarchical approach to handle ALL possible answer formats:
+    - Mathematical containers: \\boxed{...}, \\text{...}
+    - Answer indicators: Final answer, the answer is, best answer
+    - XML/HTML tags: <answer>...</answer>
+    - Structural markers: **, (), [], etc.
+    - Special cases: Dyck paths, mixed combinations
+    - Nested formats: \\boxed{**Final answer: A)**}
+    
+    The filter works by:
+    1. Extracting content from containers (\\boxed, <answer>, etc.)
+    2. Recursively parsing extracted content for answer indicators
+    3. Classifying and cleaning final answers
+    4. Multiple fallback layers for edge cases
+    
+    Args:
+        fallback (str, default="[invalid]"): Value to return when no match is found
+    """
+    
+    def __init__(self, fallback: str = "[invalid]") -> None:
+        """Initialize the comprehensive answer extraction filter."""
+        self.fallback = fallback
+        
+        # Container extraction patterns (highest priority)
+        self.container_patterns = [
+            # LaTeX containers - capture everything inside
+            (re.compile(r'\\boxed\{(.*?)\}', re.IGNORECASE | re.DOTALL), 1),
+            (re.compile(r'\\text\{(.*?)\}', re.IGNORECASE | re.DOTALL), 1),
+            
+            # XML/HTML tags
+            (re.compile(r'<answer>(.*?)</answer>', re.IGNORECASE | re.DOTALL), 1),
+            (re.compile(r'<solution>(.*?)</solution>', re.IGNORECASE | re.DOTALL), 1),
+            
+            # Markdown/structured containers
+            (re.compile(r'\*\*(.*?)\*\*'), 1),  # **content**
+            (re.compile(r'`(.*?)`'), 1),        # `content`
+        ]
+        
+        # Answer indicator patterns (medium priority)
+        self.indicator_patterns = [
+            # Final answer variants
+            (re.compile(r'final\s+answer\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'the\s+final\s+answer\s+is\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            
+            # "The answer is" variants
+            (re.compile(r'the\s+answer\s+is\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'answer\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            
+            # "Best answer" variants
+            (re.compile(r'best\s+answer\s+is\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'the\s+best\s+answer\s+is\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            
+            # Choice/Option indicators
+            (re.compile(r'choice\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'option\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'select\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            
+            # Solution/Result indicators
+            (re.compile(r'solution\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+            (re.compile(r'result\s*:?\s*(.*?)(?:\s*$|\s*\.|$)', re.IGNORECASE | re.MULTILINE), 1),
+        ]
+        
+        # Direct pattern matching for simple cases
+        self.direct_patterns = [
+            # Parenthesized letters/symbols
+            (re.compile(r'\(([A-Za-z0-9]+(?:\)|\])*)\)'), 1),
+            (re.compile(r'\[([A-Za-z0-9]+(?:\)|\])*)\]'), 1),
+            
+            # Letters followed by punctuation
+            (re.compile(r'\b([A-Za-z])\s*\)\s*\.?\s*$', re.MULTILINE), 1),  # A) at end of line
+            (re.compile(r'\b([A-Za-z])\s*\.?\s*$', re.MULTILINE), 1),       # A. at end of line
+            (re.compile(r'^([A-Za-z])\s*[\.\):\-]', re.MULTILINE), 1),       # A: at start of line
+            
+            # Special symbols (Dyck paths, etc.)
+            (re.compile(r'([)\]]+)'), 1),    # Closing brackets/parens
+            (re.compile(r'([\(\[]+)'), 1),   # Opening brackets/parens
+            (re.compile(r'([)\]\(\[]+)'), 1), # Mixed brackets
+        ]
+    
+    def _clean_extracted_content(self, content: str) -> str:
+        """Clean extracted content by removing common noise."""
+        if not content:
+            return ""
+            
+        # Remove extra whitespace
+        content = re.sub(r'\s+', ' ', content.strip())
+        
+        # Remove common noise patterns
+        content = re.sub(r'^\s*[-*•]\s*', '', content)  # Remove bullet points
+        content = re.sub(r'^\s*\d+\.\s*', '', content)  # Remove numbering
+        
+        return content
+    
+    def _extract_from_content(self, content: str, depth: int = 0) -> Optional[str]:
+        """Extract answer from already-extracted content using recursive parsing."""
+        if not content or depth > 5:  # Prevent infinite recursion
+            return None
+            
+        content = self._clean_extracted_content(content)
+        
+        # First try to extract from containers within the content
+        for pattern, group_idx in self.container_patterns:
+            match = pattern.search(content)
+            if match:
+                inner_content = match.group(group_idx)
+                # Recursively extract from inner content
+                inner_result = self._extract_from_content(inner_content, depth + 1)
+                if inner_result:
+                    return inner_result
+        
+        # Then try answer indicators
+        for pattern, group_idx in self.indicator_patterns:
+            match = pattern.search(content)
+            if match:
+                answer_content = match.group(group_idx).strip()
+                if answer_content:
+                    # Recursively process the found content
+                    recursive_result = self._extract_from_content(answer_content, depth + 1)
+                    if recursive_result:
+                        return recursive_result
+                    # If no recursive match, clean and return the content
+                    return self._normalize_answer(answer_content)
+        
+        # Finally try direct patterns
+        for pattern, group_idx in self.direct_patterns:
+            match = pattern.search(content)
+            if match:
+                return self._normalize_answer(match.group(group_idx))
+        
+        # If content looks like a simple answer, return it normalized
+        normalized = self._normalize_answer(content)
+        if normalized and len(normalized) <= 20:  # Reasonable answer length
+            return normalized
+            
+        return None
+    
+    def _normalize_answer(self, answer: str) -> str:
+        """Normalize extracted answer to standard format."""
+        if not answer:
+            return ""
+            
+        answer = answer.strip()
+        
+        # Remove common punctuation and formatting
+        answer = re.sub(r'^\s*[*_`"\']*(.*?)[*_`"\']*\s*$', r'\1', answer)
+        answer = re.sub(r'^\s*[-•]\s*', '', answer) # Remove bullets
+        
+        # Handle parentheses and brackets
+        if answer.startswith('(') and answer.endswith(')'):
+            answer = answer[1:-1].strip()
+        if answer.startswith('[') and answer.endswith(']'):
+            answer = answer[1:-1].strip()
+            
+        # Split on common separators and take first part for choice questions
+        parts = re.split(r'[)\]\s]\s*', answer, 1)
+        if len(parts) > 1 and len(parts[0]) <= 3:  # Likely a choice letter
+            answer = parts[0]
+        
+        # Clean up remaining punctuation
+        answer = re.sub(r'[^\w)\]\(\[]+$', '', answer)  # Remove trailing punctuation except brackets
+        answer = re.sub(r'^[^\w)\]\(\[]+', '', answer)  # Remove leading punctuation except brackets
+        
+        if not answer:
+            return ""
+        
+        # Normalize single letters to uppercase
+        if len(answer) == 1 and answer.isalpha():
+            return answer.upper()
+            
+        # Keep special symbols (Dyck paths) as-is
+        if all(c in '()[]' for c in answer):
+            return answer
+            
+        return answer
+    
+    def _extract_answer(self, text: str) -> Optional[str]:
+        """Extract answer using comprehensive multi-stage approach."""
+        if not text:
+            return None
+            
+        # Clean input text
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Pre-processing: Split on </think> and take the last part
+        if '</think>' in text:
+            parts = text.split('</think>')
+            text = parts[-1].strip()  # Take everything after the last </think>
+        
+        # Stage 1: Try container extraction first
+        for pattern, group_idx in self.container_patterns:
+            matches = pattern.findall(text)
+            if matches:
+                # Try each match (take the last/rightmost one as it's usually final)
+                for match in reversed(matches):
+                    result = self._extract_from_content(match)
+                    if result:
+                        return result
+        
+        # Stage 2: Try answer indicators on full text
+        for pattern, group_idx in self.indicator_patterns:
+            matches = pattern.findall(text)
+            if matches:
+                for match in reversed(matches):
+                    result = self._extract_from_content(match)
+                    if result:
+                        return result
+        
+        # Stage 3: Try direct patterns on full text
+        for pattern, group_idx in self.direct_patterns:
+            matches = pattern.findall(text)
+            if matches:
+                for match in reversed(matches):
+                    normalized = self._normalize_answer(match)
+                    if normalized:
+                        return normalized
+        
+        # Stage 4: Last resort - look for isolated single letters
+        single_letter_matches = re.findall(r'\b([A-Za-z])\b', text)
+        if single_letter_matches:
+            return single_letter_matches[-1].upper()
+            
+        return None
+    
+    def apply(self, resps: list[list[str]], docs: list[dict]) -> list[list[str]]:
+        """Apply comprehensive answer extraction to responses."""
+        import json
+        import os
+        from datetime import datetime
+        
+        # Log all raw generations before filtering (expensive inference preservation)
+        log_dir = "filter_logs"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        raw_log_file = os.path.join(log_dir, f"raw_generations_{timestamp}.jsonl")
+        
+        try:
+            with open(raw_log_file, 'w') as f:
+                for idx, (responses, doc) in enumerate(zip(resps, docs)):
+                    # Main response (first response for recompute script compatibility)
+                    main_response = responses[0] if responses else ""
+                    
+                    # Extract target/answer from doc
+                    target = None
+                    for key in ['target', 'answer', 'label', 'gold', 'choices']:
+                        if key in doc:
+                            target = doc[key]
+                            break
+                    
+                    # For multiple choice, extract the correct answer letter
+                    if target is None and 'choices' in doc and 'gold' in doc:
+                        choices = doc['choices']
+                        gold_idx = doc['gold']
+                        if isinstance(gold_idx, int) and 0 <= gold_idx < len(choices):
+                            # Convert to letter format (A, B, C, D)
+                            target = chr(ord('A') + gold_idx)
+                    
+                    log_entry = {
+                        # Compatible with recompute script format
+                        "response": main_response,
+                        "target": target,
+                        "doc": doc,
+                        
+                        # Additional metadata
+                        "idx": idx,
+                        "doc_id": doc.get("doc_id", f"doc_{idx}"),
+                        "task": doc.get("task", "unknown"),
+                        "raw_responses": responses,  # All responses for completeness
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    f.write(json.dumps(log_entry) + "\n")
+            
+            print(f"[FILTER LOG] Saved {len(resps)} raw generations to {raw_log_file}")
+        except Exception as e:
+            print(f"[FILTER LOG ERROR] Failed to save raw generations: {e}")
+        
+        filtered_resps = []
+        filter_errors = []
+        
+        for idx, responses in enumerate(resps):
+            filtered = []
+            for resp_idx, resp in enumerate(responses):
+                try:
+                    answer = self._extract_answer(resp)
+                    filtered.append(answer if answer is not None else self.fallback)
+                except Exception as e:
+                    # Log filter errors but don't crash
+                    error_info = {
+                        "doc_idx": idx,
+                        "resp_idx": resp_idx,
+                        "error": str(e),
+                        "raw_response": resp[:500] + "..." if len(resp) > 500 else resp
+                    }
+                    filter_errors.append(error_info)
+                    filtered.append(self.fallback)
+            filtered_resps.append(filtered)
+        
+        # Log any filter errors
+        if filter_errors:
+            error_log_file = os.path.join(log_dir, f"filter_errors_{timestamp}.json")
+            try:
+                with open(error_log_file, 'w') as f:
+                    json.dump(filter_errors, f, indent=2)
+                print(f"[FILTER LOG] Logged {len(filter_errors)} filter errors to {error_log_file}")
+            except Exception as e:
+                print(f"[FILTER LOG ERROR] Failed to save filter errors: {e}")
+            
+        return filtered_resps
